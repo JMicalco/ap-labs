@@ -11,23 +11,45 @@ import (
 	"log"
 	"net"
 	"os"
+	"flag"
+	"fmt"
 )
 
 //!+
 func main() {
-	conn, err := net.Dial("tcp", "localhost:8000")
-	if err != nil {
-		log.Fatal(err)
+
+	if len(os.Args) < 5 {
+		log.Fatal("Not enough parameters to login as a user")
+
+	} else {
+
+		if os.Args[1] == "-user" && os.Args[3] == "-server"{ 
+			userf := flag.String("user", " ", "user")
+			server := flag.String("server", " ", "server")
+			flag.Parse()
+			
+			conn, err := net.Dial("tcp", *server)
+			fmt.Fprintf(conn, *userf)
+			if err != nil {
+				log.Fatal(err)
+			}
+			done := make(chan struct{})
+			go func() {
+				io.Copy(os.Stdout, conn) // NOTE: ignoring errors
+				log.Println("done")
+				done <- struct{}{} // signal the main goroutine
+			}()
+			fmt.Println("irc-server > Welcome to the Simple IRC Server")
+			mustCopy(conn, os.Stdin)
+			conn.Close()
+			<-done // wait for background goroutine to finish
+
+
+		} else {
+			log.Fatal("missing either -user or -server flags")
+		}
 	}
-	done := make(chan struct{})
-	go func() {
-		io.Copy(os.Stdout, conn) // NOTE: ignoring errors
-		log.Println("done")
-		done <- struct{}{} // signal the main goroutine
-	}()
-	mustCopy(conn, os.Stdin)
-	conn.Close()
-	<-done // wait for background goroutine to finish
+
 }
 
 //!-
