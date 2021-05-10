@@ -29,6 +29,7 @@ type user struct {
 	time string
 	isOnline bool
 	isAdmin bool
+	isKicked bool
 }
 
 var (
@@ -56,7 +57,9 @@ func broadcaster() {
 
 		case cli := <-leaving:
 			client:=clients[cli]
-			//clients[cli].connection.Close()
+			if client.isKicked{
+				client.chann <- "irc-server > The Admin decided to kick you from the channel"
+			}
 			close(clients[cli].chann)
 			delete(clients, clients[cli].name)
 			if client.isAdmin==true && len(clients)>0{
@@ -69,8 +72,7 @@ func broadcaster() {
 			} else if (client.isAdmin) {
 				admin=false
 			}
-
-
+			client.connection.Close()
 		}
 	}
 }
@@ -107,6 +109,7 @@ func handleConn(conn net.Conn) {
 			connection: conn,
 			time: time.Now().In(location).Format("2006-01-02 15:04:05"),
 			isOnline: true,
+			isKicked: false,
 		}
 
 		clients[name]= &newUser
@@ -175,6 +178,7 @@ func handleConn(conn net.Conn) {
 						if newUser.isAdmin==true{
 							if clients[subCommand[1]] != nil{
 								if clients[subCommand[1]] != &newUser{
+									clients[subCommand[1]].isKicked=true
 									clients[subCommand[1]].chann <- "irc-server > You're kicked from this channel"
 									leaving <- clients[subCommand[1]].name
 									fmt.Println("irc-server > [" + clients[subCommand[1]].name  + "] was kicked")
