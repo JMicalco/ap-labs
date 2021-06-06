@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Races</title>
+    <style>
+        #canvas {
+            border: 3px dotted black;
+        }
+    </style>
+</head>
+
+<body>
+    <div style="display: flex;">
+        <canvas id="canvas" width="500" height="500"></canvas>
+        <div style="padding-left: 20px;">
+            <h3>Stats</h3>
+            <div id="stats"></div>
+            <h3>Top 3 car</h3>
+            <div id="top3"></div>
+        </div>
+    </div>
+    <script>
+        var stats = document.getElementById("stats")
+        var top3 = document.getElementById("top3")
+        var canvas = document.getElementById("canvas")
+        var cw = canvas.width
+        var ch = canvas.height
+        var ctx = canvas.getContext('2d');
+
+        var cars = []
+        var top3car = []
+        var laps
+
+        function setLaps(value) {
+            laps = value
+        }
+
+        function addTop3car(car) {
+            if (top3car.length < 3) {
+                for (var i = 0; i < top3car.length; i++) {
+                    if (top3car[i].id === car.id) {
+                        return
+                    }
+                }
+                top3car.push(car)
+            }
+        }
+
+        function add(car) {
+            cars.push(car)
+        }
+
+        function update(car) {
+            var isUpdated = false
+            for (var i = 0; i < cars.length; i++) {
+                if (cars[i].id === car.id) {
+                    if (cars[i].completed == false) {
+                        cars[i] = car
+                    }
+                    isUpdated = true
+                    return
+                }
+            }
+            if (isUpdated === false) {
+                add(car)
+            }
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, cw, cw)
+            var tbl = '<table><tr><th>Id</th><th>Laps</th><th>Speed</th><th>Time</th></tr>'
+            cars.map(car => {
+                if (car.completed == false) {
+                    var x = 0
+                    var y = 0
+
+                    var width = 500 - 15
+                    var height = 500 - 15
+
+                    d = car.distance % (2 * (width + height))
+                    if (d < width) {
+                        x = d
+                        y = 0
+                    } else if (d < width + height) {
+                        x = width
+                        y = d - width
+                    } else if (d < 2 * width + height) {
+                        x = 2 * width + height - d
+                        y = height
+                    } else {
+                        x = 0
+                        y = 2 * (width + height) - d
+                    }
+
+                    ctx.fillStyle = '#FF0000'
+                    ctx.fillRect(x, y, 15, 15)
+                    ctx.font = "12px Arial";
+                    ctx.fillStyle = '#000000'
+                    ctx.fillText(car.id, x + 5, y + 10)
+                } else {
+                    addTop3car(car)
+                }
+                tbl = tbl + `<tr><td>${car.id}</td><td>${Math.floor(car.distance / 2000)}/${laps}</td><td>${car.speed}</td><td>${car.clock}</td></tr>`
+            })
+            tbl = tbl + '</table>'
+            stats.innerHTML = tbl
+
+            var tbl1 = '<table><tr><th>Id</th><th>Laps</th><th>Speed</th><th>Time</th></tr>'
+            top3car.map(car => {
+                tbl1 = tbl1 + `<tr><td>${car.id}</td><td>${Math.floor(car.distance / 2000)}/${laps}</td><td>${car.speed}</td><td>${car.clock}</td></tr>`
+            })
+            tbl1 = tbl1 + '</table>'
+            top3.innerHTML = tbl1
+        }
+
+        setInterval(render, 1000 / 20)
+    </script>
+</body>
+
+</html>
